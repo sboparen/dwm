@@ -209,6 +209,7 @@ static char stext[256];
 static int screen;
 static int sx, sy, sw, sh; /* X display screen geometry x, y, width, height */ 
 static int by, bh, blw;    /* bar geometry y, height and layout symbol width */
+static int bh1;
 static int wx, wy, ww, wh; /* window area geometry x, y, width, height, bar excluded */
 static unsigned int seltags = 0, sellt = 0;
 static int (*xerrorxlib)(Display *, XErrorEvent *);
@@ -365,7 +366,7 @@ buttonpress(XEvent *e) {
 	XButtonPressedEvent *ev = &e->xbutton;
 
 	click = ClkRootWin;
-	if(ev->window == barwin) {
+	if(ev->window == barwin && ev->y < bh1) {
 		i = x = 0;
 		do x += TEXTW(tags[i]); while(ev->x >= x && ++i < LENGTH(tags));
 		if(i < LENGTH(tags)) {
@@ -378,6 +379,21 @@ buttonpress(XEvent *e) {
 			click = ClkStatusText;
 		else
 			click = ClkWinTitle;
+	}
+	else if(ev->window == barwin) {
+		int n = 0;
+		for(c = clients; c; c = c->next) if(c && ISVISIBLE(c))
+			n++;
+		if(n > 0) {
+			int k = (ev->x * n) / ww, j = 0;
+			for(c = clients; c; c = c->next) if(c && ISVISIBLE(c)) {
+				if(j == k) {
+					focus(c);
+					restack();
+				}
+				j++;
+			}
+		}
 	}
 	else if((c = getclient(ev->window))) {
 		focus(c);
@@ -556,6 +572,17 @@ drawbar(void) {
 	unsigned long *col;
 	Client *c;
 
+	// For the client tabs.
+	int n = 0;
+	for(c = clients; c; c = c->next) if(c && ISVISIBLE(c))
+		n++;
+	int newbh = ((lt[sellt]->arrange == monocle) && (n > 1)) ? bh1*2 : bh1;
+	if(bh != newbh) {
+		bh = newbh;
+		updategeom();
+		updatebar();
+	}
+
 	for(c = clients; c; c = c->next) {
 		occ |= c->tags;
 		if(c->isurgent)
@@ -593,6 +620,24 @@ drawbar(void) {
 		else
 			drawtext(NULL, dc.norm, False);
 	}
+
+	// For the client tabs.
+	dc.y = bh1;
+	if(n > 0) {
+		int j = 0;
+		for(c = clients; c; c = c->next) if(c && ISVISIBLE(c)) {
+			dc.x = (ww * j) / n;
+			dc.w = ((ww * (j + 1)) / n) - dc.x;
+			drawtext(c->name, (sel == c) ? dc.sel : dc.norm, False);
+			j++;
+		}
+	} else {
+		dc.x = 0;
+		dc.w = ww;
+		drawtext("", dc.norm, False);
+	}
+	dc.y = 0;
+
 	XCopyArea(dpy, dc.drawable, barwin, dc.gc, 0, 0, ww, bh, 0, 0);
 	XSync(dpy, False);
 }
@@ -1265,7 +1310,8 @@ setup(void) {
 	sy = 0;
 	sw = DisplayWidth(dpy, screen);
 	sh = DisplayHeight(dpy, screen);
-	bh = dc.h = dc.font.height + 2;
+	bh1 = dc.h = dc.font.height + 2;
+	bh = bh1 * 2;
 	lt[0] = &layouts[0];
 	lt[1] = &layouts[1 % LENGTH(layouts)];
 	updategeom();
