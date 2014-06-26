@@ -50,8 +50,9 @@
 #define MIN(a, b)               ((a) < (b) ? (a) : (b))
 #define MAXTAGLEN               16
 #define MOUSEMASK               (BUTTONMASK|PointerMotionMask)
-#define WIDTH(x)                ((x)->w + 2 * (x)->bw)
-#define HEIGHT(x)               ((x)->h + 2 * (x)->bw)
+#define BW(x)                   ((x)->isfloating ? (x)->bw : 0)
+#define WIDTH(x)                ((x)->w + 2 * BW((x)))
+#define HEIGHT(x)               ((x)->h + 2 * BW((x)))
 #define TAGMASK                 ((int)((1LL << LENGTH(tags)) - 1))
 #define TEXTW(x)                (textnw(x, strlen(x)) + dc.font.height)
 
@@ -287,9 +288,9 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h) {
 		*x = sw - WIDTH(c);
 	if(*y > sy + sh)
 		*y = sh - HEIGHT(c);
-	if(*x + *w + 2 * c->bw < sx)
+	if(*x + *w + 2 * BW(c) < sx)
 		*x = sx;
-	if(*y + *h + 2 * c->bw < sy)
+	if(*y + *h + 2 * BW(c) < sy)
 		*y = sy;
 	if(*h < bh)
 		*h = bh;
@@ -989,7 +990,7 @@ manage(Window w, XWindowAttributes *wa) {
 		c->bw = borderpx;
 	}
 
-	wc.border_width = c->bw;
+	wc.border_width = BW(c);
 	XConfigureWindow(dpy, w, CWBorderWidth, &wc);
 	XSetWindowBorder(dpy, w, dc.norm[ColBorder]);
 	configure(c); /* propagates border_width, if size doesn't change */
@@ -1017,8 +1018,11 @@ manage(Window w, XWindowAttributes *wa) {
 	settagsprop(c->win, c->tags);
 	if(!c->isfloating)
 		c->isfloating = trans != None || c->isfixed;
-	if(c->isfloating)
+	if(c->isfloating) {
 		XRaiseWindow(dpy, c->win);
+		wc.border_width = BW(c);
+		XConfigureWindow(dpy, w, CWBorderWidth, &wc);
+	}
 	attach(c);
 	attachstack(c);
 	XMoveResizeWindow(dpy, c->win, c->x + 2 * sw, c->y, c->w, c->h); /* some windows require this */
@@ -1054,7 +1058,7 @@ monocle(void) {
 	Client *c;
 
 	for(c = nexttiled(clients); c; c = nexttiled(c->next)) {
-		resize(c, wx, wy, ww - 2 * c->bw, wh - 2 * c->bw);
+		resize(c, wx, wy, ww - 2 * BW(c), wh - 2 * BW(c));
 	}
 }
 
@@ -1168,7 +1172,7 @@ resize(Client *c, int x, int y, int w, int h) {
 		c->y = wc.y = y;
 		c->w = wc.width = w;
 		c->h = wc.height = h;
-		wc.border_width = c->bw;
+		wc.border_width = BW(c);
 		XConfigureWindow(dpy, c->win,
 				CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
 		configure(c);
@@ -1191,7 +1195,7 @@ resizemouse(const Arg *arg) {
 	if(XGrabPointer(dpy, root, False, MOUSEMASK, GrabModeAsync, GrabModeAsync,
 	None, cursor[CurResize], CurrentTime) != GrabSuccess)
 		return;
-	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1, c->h + c->bw - 1);
+	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + BW(c) - 1, c->h + BW(c) - 1);
 	do {
 		XMaskEvent(dpy, MOUSEMASK|ExposureMask|SubstructureRedirectMask, &ev);
 		switch(ev.type) {
@@ -1201,8 +1205,8 @@ resizemouse(const Arg *arg) {
 			handler[ev.type](&ev);
 			break;
 		case MotionNotify:
-			nw = MAX(ev.xmotion.x - ocx - 2 * c->bw + 1, 1);
-			nh = MAX(ev.xmotion.y - ocy - 2 * c->bw + 1, 1);
+			nw = MAX(ev.xmotion.x - ocx - 2 * BW(c) + 1, 1);
+			nh = MAX(ev.xmotion.y - ocy - 2 * BW(c) + 1, 1);
 
 			if(snap && nw >= wx && nw <= wx + ww
 			        && nh >= wy && nh <= wy + wh) {
@@ -1216,7 +1220,7 @@ resizemouse(const Arg *arg) {
 		}
 	}
 	while(ev.type != ButtonRelease);
-	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1, c->h + c->bw - 1);
+	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + BW(c) - 1, c->h + BW(c) - 1);
 	XUngrabPointer(dpy, CurrentTime);
 	while(XCheckMaskEvent(dpy, EnterWindowMask, &ev));
 }
@@ -1476,24 +1480,26 @@ tile(void) {
 	/* master */
 	c = nexttiled(clients);
 	mw = mfact * ww;
-	resize(c, wx, wy, (n == 1 ? ww : mw) - 2 * c->bw, wh - 2 * c->bw);
+	resize(c, wx, wy, (n == 1 ? ww : mw) - 2 * BW(c), wh - 2 * BW(c));
 
 	if(--n == 0)
 		return;
 
 	/* tile stack */
-	x = (wx + mw > c->x + c->w) ? c->x + c->w + 2 * c->bw : wx + mw;
+	x = (wx + mw > c->x + c->w) ? c->x + c->w + 2 * BW(c) : wx + mw;
 	y = wy;
 	w = (wx + mw > c->x + c->w) ? wx + ww - x : ww - mw;
 	h = wh / n;
 	if(h < bh)
 		h = wh;
 
+	x++; w--; h--;
 	for(i = 0, c = nexttiled(c->next); c; c = nexttiled(c->next), i++) {
-		resize(c, x, y, w - 2 * c->bw, /* remainder */ ((i + 1 == n)
-		       ? wy + wh - y - 2 * c->bw : h - 2 * c->bw));
+		resize(c, x, y, w - 2 * BW(c), /* remainder */ ((i + 1 == n)
+		       ? wy + wh - y - 2 * BW(c) : h - 2 * BW(c)));
 		if(h != wh)
 			y = c->y + HEIGHT(c);
+		y++;
 	}
 }
 
