@@ -49,6 +49,7 @@
 #define MAX(a, b)               ((a) > (b) ? (a) : (b))
 #define MIN(a, b)               ((a) < (b) ? (a) : (b))
 #define MAXTAGLEN               16
+#define MAXCOLORS               8
 #define MOUSEMASK               (BUTTONMASK|PointerMotionMask)
 #define BW(x)                   ((x)->isfloating ? (x)->bw : 0)
 #define WIDTH(x)                ((x)->w + 2 * BW((x)))
@@ -97,8 +98,8 @@ struct Client {
 
 typedef struct {
 	int x, y, w, h;
-	unsigned long norm[ColLast];
-	unsigned long sel[ColLast];
+	unsigned long colors[MAXCOLORS][ColLast];
+	unsigned long *norm, *sel;
 	Drawable drawable;
 	GC gc;
 	struct {
@@ -150,6 +151,7 @@ static void die(const char *errstr, ...);
 static void drawbar(void);
 static void drawsquare(Bool filled, Bool empty, Bool invert, unsigned long col[ColLast]);
 static void drawtext(const char *text, unsigned long col[ColLast], Bool invert);
+static void drawtext2(const char *text, unsigned long col[ColLast], Bool invert, Bool pad);
 static void enternotify(XEvent *e);
 static void expose(XEvent *e);
 static void focus(Client *c);
@@ -596,9 +598,12 @@ drawbar(void) {
 	dc.x = 0;
 	for(i = 0; i < LENGTH(tags); i++) {
 		dc.w = TEXTW(tags[i]);
-		col = tagset[seltags] & 1 << i ? dc.sel : dc.norm;
-		drawtext(tags[i], col, urg & 1 << i);
-		drawsquare(sel && sel->tags & 1 << i, occ & 1 << i, urg & 1 << i, col);
+		col = dc.colors[3];
+		if(occ & 1 << i) col = dc.colors[0];
+		if(urg & 1 << i) col = dc.colors[2];
+		if(tagset[seltags] & 1 << i) col = dc.colors[1];
+		drawtext(tags[i], col, False);
+		drawsquare(sel && sel->tags & 1 << i, 0, False, col);
 		dc.x += dc.w;
 	}
 	if(blw > 0) {
@@ -608,18 +613,47 @@ drawbar(void) {
 	}
 	else
 		x = dc.x;
-	dc.w = TEXTW(stext);
+
+	// Draw coloured status text.
+	char *ptr;
+	// Step 1: Compute width.
+	dc.w = dc.font.height;
+	for(ptr = stext; ; ptr++) {
+		const char *start = ptr;
+		for(; (*ptr < 0) || (*ptr > NUMCOLORS); ptr++);
+		const char ch = *ptr;
+		*ptr = 0;
+		dc.w += textnw(start, strlen(start));
+		if(!(*ptr = ch)) break;
+	}
 	dc.x = ww - dc.w;
 	if(dc.x < x) {
 		dc.x = x;
 		dc.w = ww - x;
 	}
-	drawtext(stext, dc.norm, False);
+	// Step 2: Draw it.
+	int old_dcx = dc.x, colour = 1;
+	dc.w = ww - dc.x;
+	drawtext2("", dc.colors[colour-1], False, False);
+	dc.x += dc.font.height / 2;
+	for(ptr = stext; ; ptr++) {
+		const char *start = ptr;
+		for(; (*ptr < 0) || (*ptr > NUMCOLORS); ptr++);
+		const char ch = *ptr;
+		*ptr = 0;
+		dc.w = ww - dc.x;
+		drawtext2(start, dc.colors[colour-1], False, False);
+		dc.x += textnw(start, strlen(start));
+		colour = ch;
+		if(!(*ptr = ch)) break;
+	}
+	dc.x = old_dcx;
+
 	if((dc.w = dc.x - x) > bh) {
 		dc.x = x;
 		if(sel) {
-			drawtext(sel->name, dc.sel, False);
-			drawsquare(sel->isfixed, sel->isfloating, False, dc.sel);
+			drawtext(sel->name, dc.colors[0], False);
+			drawsquare(sel->isfixed, sel->isfloating, False, dc.colors[0]);
 		}
 		else
 			drawtext(NULL, dc.norm, False);
@@ -669,6 +703,12 @@ drawsquare(Bool filled, Bool empty, Bool invert, unsigned long col[ColLast]) {
 
 void
 drawtext(const char *text, unsigned long col[ColLast], Bool invert) {
+	drawtext2(text, col, invert, True);
+}
+
+void
+drawtext2(const char *text, unsigned long col[ColLast], Bool invert,
+		        Bool pad) {
 	char buf[256];
 	int i, x, y, h, len, olen;
 	XRectangle r = { dc.x, dc.y, dc.w, dc.h };
@@ -678,8 +718,8 @@ drawtext(const char *text, unsigned long col[ColLast], Bool invert) {
 	if(!text)
 		return;
 	olen = strlen(text);
-	h = dc.font.ascent + dc.font.descent;
-	y = dc.y + (dc.h / 2) - (h / 2) + dc.font.ascent;
+	h = pad ? (dc.font.ascent + dc.font.descent) : 0;
+	y = dc.y + ((dc.h + dc.font.ascent - dc.font.descent) / 2);
 	x = dc.x + (h / 2);
 	/* shorten text if necessary */
 	for(len = MIN(olen, sizeof buf); len && textnw(text, len) > dc.w - h; len--);
@@ -1366,12 +1406,13 @@ setup(void) {
 	cursor[CurMove] = XCreateFontCursor(dpy, XC_fleur);
 
 	/* init appearance */
-	dc.norm[ColBorder] = getcolor(normbordercolor);
-	dc.norm[ColBG] = getcolor(normbgcolor);
-	dc.norm[ColFG] = getcolor(normfgcolor);
-	dc.sel[ColBorder] = getcolor(selbordercolor);
-	dc.sel[ColBG] = getcolor(selbgcolor);
-	dc.sel[ColFG] = getcolor(selfgcolor);
+	for(i=0; i<NUMCOLORS; i++) {
+		dc.colors[i][ColBorder] = getcolor(colors[i][ColBorder]);
+		dc.colors[i][ColFG] = getcolor(colors[i][ColFG]);
+		dc.colors[i][ColBG] = getcolor(colors[i][ColBG]);
+	}
+	dc.norm = dc.colors[0];
+	dc.sel = dc.colors[1];
 	dc.drawable = XCreatePixmap(dpy, root, DisplayWidth(dpy, screen), bh, DefaultDepth(dpy, screen));
 	dc.gc = XCreateGC(dpy, root, 0, NULL);
 	XSetLineAttributes(dpy, dc.gc, 1, LineSolid, CapButt, JoinMiter);
