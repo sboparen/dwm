@@ -648,6 +648,7 @@ drawtext(const char *text, unsigned long col[ColLast], Bool invert) {
 
 void
 enternotify(XEvent *e) {
+	return; /* Click to focus. */
 	Client *c;
 	XCrossingEvent *ev = &e->xcrossing;
 
