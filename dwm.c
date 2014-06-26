@@ -55,6 +55,7 @@
 #define WIDTH(x)                ((x)->w + 2 * BW((x)))
 #define HEIGHT(x)               ((x)->h + 2 * BW((x)))
 #define TAGMASK                 ((int)((1LL << LENGTH(tags)) - 1))
+#define TERMINAL                2
 #define TEXTW(x)                (textnw(x, strlen(x)) + dc.font.height)
 
 /* enums */
@@ -91,6 +92,7 @@ struct Client {
 	int bw, oldbw;
 	unsigned int tags;
 	Bool isfixed, isfloating, isurgent;
+	Bool isterminal;
 	Client *next;
 	Client *snext;
 	Window win;
@@ -266,7 +268,10 @@ applyrules(Client *c) {
 			if((!r->title || strstr(c->name, r->title))
 			&& (!r->class || (ch.res_class && strstr(ch.res_class, r->class)))
 			&& (!r->instance || (ch.res_name && strstr(ch.res_name, r->instance)))) {
-				c->isfloating = r->isfloating;
+				if((r->isfloating == True) || (r->isfloating == False))
+					c->isfloating = r->isfloating;
+				if(r->isfloating == TERMINAL)
+					c->isterminal = True;
 				c->tags |= r->tags; 
 			}
 		}
@@ -326,6 +331,15 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h) {
 			*w -= *w % c->incw;
 		if(c->inch)
 			*h -= *h % c->inch;
+
+		/* Terminal width adjustments. */
+#define GOOD_TERMINAL_WIDTH(c) (80 * (c)->incw)
+#define IS_BAD_TERMINAL_WIDTH(c, w) \
+	(((c)->isterminal) && \
+	 ((w) >=  80 * (c)->incw) && \
+	 ((w) <  110 * (c)->incw))
+		if(IS_BAD_TERMINAL_WIDTH(c, *w))
+			*w = GOOD_TERMINAL_WIDTH(c);
 
 		/* restore base dimensions */
 		*w += c->basew;
@@ -1007,6 +1021,7 @@ manage(Window w, XWindowAttributes *wa) {
 		die("fatal: could not malloc() %u bytes\n", sizeof(Client));
 	*c = cz;
 	c->win = w;
+	c->isterminal = False;
 
 	/* geometry */
 	c->x = wa->x;
@@ -1518,9 +1533,38 @@ tile(void) {
 	if(n == 0)
 		return;
 
+	mw = mfact * ww;
+
+	/* Terminal width adjustments. */
+	int wx_orig = wx, wx = wx_orig, ww_orig = ww, ww = ww_orig;
+	const Client *f = nexttiled(clients);
+	if(f) {
+		if(n == 1) {
+			if(IS_BAD_TERMINAL_WIDTH(f, ww - f->basew))
+				ww = GOOD_TERMINAL_WIDTH(f) + f->basew;
+		} else if(n > 1) {
+			/* Left side gives space to right side. */
+			if(IS_BAD_TERMINAL_WIDTH(f, mw - f->basew))
+				mw = GOOD_TERMINAL_WIDTH(f) + f->basew;
+			/* Right side gives space to left side. */
+			int rw = 0;
+			for(c = nexttiled(f->next); c; c = nexttiled(c->next))
+				if(IS_BAD_TERMINAL_WIDTH(c, (ww - mw) - c->basew))
+					rw = MAX(rw, GOOD_TERMINAL_WIDTH(c) + c->basew);
+				else goto greedy;
+			mw = ww - rw;
+greedy:
+			/* Shrink left side. */
+			rw = ww - mw;
+			if(IS_BAD_TERMINAL_WIDTH(f, mw - f->basew))
+				mw = GOOD_TERMINAL_WIDTH(f) + f->basew;
+			ww = mw + rw + 1;
+		}
+	}
+	wx += (ww_orig - ww) / 2;
+
 	/* master */
 	c = nexttiled(clients);
-	mw = mfact * ww;
 	resize(c, wx, wy, (n == 1 ? ww : mw) - 2 * BW(c), wh - 2 * BW(c));
 
 	if(--n == 0)
