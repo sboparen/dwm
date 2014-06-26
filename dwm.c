@@ -60,6 +60,7 @@ enum { CurNormal, CurResize, CurMove, CurLast };        /* cursor */
 enum { ColBorder, ColFG, ColBG, ColLast };              /* color */
 enum { NetSupported, NetWMName, NetLast };              /* EWMH atoms */
 enum { WMProtocols, WMDelete, WMState, WMLast };        /* default atoms */
+enum { DWMTags, DWMLast };                              /* DWM atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast };             /* clicks */
 
@@ -179,6 +180,7 @@ static void scan(void);
 static void setclientstate(Client *c, long state);
 static void setlayout(const Arg *arg);
 static void setmfact(const Arg *arg);
+static void settagsprop(Window w, unsigned int tags);
 static void setup(void);
 static void showhide(Client *c);
 static void sigchld(int signal);
@@ -229,7 +231,7 @@ static void (*handler[LASTEvent]) (XEvent *) = {
 	[PropertyNotify] = propertynotify,
 	[UnmapNotify] = unmapnotify
 };
-static Atom wmatom[WMLast], netatom[NetLast];
+static Atom wmatom[WMLast], netatom[NetLast], dwmatom[DWMLast];
 static Bool otherwm;
 static Bool running = True;
 static Client *clients = NULL;
@@ -999,12 +1001,20 @@ manage(Window w, XWindowAttributes *wa) {
 	XSelectInput(dpy, w, EnterWindowMask|FocusChangeMask|PropertyChangeMask|StructureNotifyMask);
 	grabbuttons(c, False);
 	updatetitle(c);
-	if(XGetTransientForHint(dpy, w, &trans))
-		t = getclient(trans);
-	if(t)
-		c->tags = t->tags;
-	else
-		applyrules(c);
+	XTextProperty prop;
+	applyrules(c);
+	if(XGetTextProperty(dpy, c->win, &prop, dwmatom[DWMTags])) {
+		c->tags = *(unsigned int *)prop.value;
+		XFree(prop.value);
+	} else {
+		if(XGetTransientForHint(dpy, w, &trans))
+			t = getclient(trans);
+		if(t)
+			c->tags = t->tags;
+	}
+	if(!c->tags)
+		c->tags = tagset[seltags];
+	settagsprop(c->win, c->tags);
 	if(!c->isfloating)
 		c->isfloating = trans != None || c->isfixed;
 	if(c->isfloating)
@@ -1282,6 +1292,17 @@ setclientstate(Client *c, long state) {
 }
 
 void
+settagsprop(Window w, unsigned int tags) {
+	unsigned int v[1] = { tags };
+	XTextProperty p;
+	p.value = (unsigned char *)v;
+	p.encoding = XA_CARDINAL;
+	p.format = 32;
+	p.nitems = LENGTH(v);
+	XSetTextProperty(dpy, w, &p, dwmatom[DWMTags]);
+}
+
+void
 setlayout(const Arg *arg) {
 	if(!arg || !arg->v || arg->v != lt[sellt])
 		sellt ^= 1;
@@ -1333,6 +1354,7 @@ setup(void) {
 	wmatom[WMState] = XInternAtom(dpy, "WM_STATE", False);
 	netatom[NetSupported] = XInternAtom(dpy, "_NET_SUPPORTED", False);
 	netatom[NetWMName] = XInternAtom(dpy, "_NET_WM_NAME", False);
+	dwmatom[DWMTags] = XInternAtom(dpy, "DWM_TAGS", False);
 
 	/* init cursors */
 	wa.cursor = cursor[CurNormal] = XCreateFontCursor(dpy, XC_left_ptr);
@@ -1425,6 +1447,7 @@ void
 tag(const Arg *arg) {
 	if(sel && arg->ui & TAGMASK) {
 		sel->tags = arg->ui & TAGMASK;
+		settagsprop(sel->win, sel->tags);
 		arrange();
 	}
 }
@@ -1508,6 +1531,7 @@ toggletag(const Arg *arg) {
 	mask = sel->tags ^ (arg->ui & TAGMASK);
 	if(mask) {
 		sel->tags = mask;
+		settagsprop(sel->win, sel->tags);
 		arrange();
 	}
 }
