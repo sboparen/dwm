@@ -83,6 +83,7 @@ struct Client {
 	char name[256];
 	float mina, maxa;
 	int x, y, w, h;
+	int sx, sy, sw, sh;
 	int basew, baseh, incw, inch, maxw, maxh, minw, minh;
 	int bw, oldbw;
 	unsigned int tags;
@@ -991,6 +992,10 @@ manage(Window w, XWindowAttributes *wa) {
 	XSetWindowBorder(dpy, w, dc.norm[ColBorder]);
 	configure(c); /* propagates border_width, if size doesn't change */
 	updatesizehints(c);
+	c->sx = c->x;
+	c->sy = c->y;
+	c->sw = c->w;
+	c->sh = c->h;
 	XSelectInput(dpy, w, EnterWindowMask|FocusChangeMask|PropertyChangeMask|StructureNotifyMask);
 	grabbuttons(c, False);
 	updatetitle(c);
@@ -1143,6 +1148,12 @@ resize(Client *c, int x, int y, int w, int h) {
 	XWindowChanges wc;
 
 	if(applysizehints(c, &x, &y, &w, &h)) {
+		if (!lt[sellt]->arrange || c->isfloating) {
+			c->sx = x;
+			c->sy = y;
+			c->sw = w;
+			c->sh = h;
+		}
 		c->x = wc.x = x;
 		c->y = wc.y = y;
 		c->w = wc.width = w;
@@ -1378,7 +1389,9 @@ showhide(Client *c) {
 		return;
 	if(ISVISIBLE(c)) { /* show clients top down */
 		XMoveWindow(dpy, c->win, c->x, c->y);
-		if(!lt[sellt]->arrange || c->isfloating)
+		if(!lt[sellt]->arrange && !c->isfloating)
+			resize(c, c->sx, c->sy, c->sw, c->sh);
+		else if (c->isfloating)
 			resize(c, c->x, c->y, c->w, c->h);
 		showhide(c->snext);
 	}
@@ -1475,7 +1488,13 @@ togglefloating(const Arg *arg) {
 		return;
 	sel->isfloating = !sel->isfloating || sel->isfixed;
 	if(sel->isfloating)
-		resize(sel, sel->x, sel->y, sel->w, sel->h);
+		resize(sel, sel->sx, sel->sy, sel->sw, sel->sh);
+	else {
+		sel->sx = sel->x;
+		sel->sy = sel->y;
+		sel->sw = sel->w;
+		sel->sh = sel->h;
+	}
 	arrange();
 }
 
