@@ -1,0 +1,5 @@
+#!/bin/bash
+# Run dwm from the root of the home directory, so that the programs
+# it launches will have the correct working directory.
+cd
+exec $OLDPWD/dwm

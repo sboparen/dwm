@@ -333,11 +333,12 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h) {
 			*h -= *h % c->inch;
 
 		/* Terminal width adjustments. */
-#define GOOD_TERMINAL_WIDTH(c) (80 * (c)->incw)
+#define GOOD_TERMINAL_WIDTH(c) \
+  (MIN(80 * (c)->incw, ((sw-1)/2-4) / MAX(1, (c)->incw) * (c)->incw))
 #define IS_BAD_TERMINAL_WIDTH(c, w) \
-	(((c)->isterminal) && \
-	 ((w) >=  80 * (c)->incw) && \
-	 ((w) <  110 * (c)->incw))
+  (((c)->isterminal) && \
+   ((w) > GOOD_TERMINAL_WIDTH(c)) && \
+   ((w) < GOOD_TERMINAL_WIDTH(c) * 3 / 2))
 		if(IS_BAD_TERMINAL_WIDTH(c, *w))
 			*w = GOOD_TERMINAL_WIDTH(c);
 
