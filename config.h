@@ -1,11 +1,12 @@
 /* See LICENSE file for copyright and license details. */
+#include <X11/XF86keysym.h>
 
 /* appearance */
 #define NUMCOLORS         4             // need at least 4
 static const char colors[NUMCOLORS][ColLast][8] = {
 	// border   foreground  background
 	{ "#000000", "#aaaaaa", "#000000" },  // 0 = normal
-	{ "#0066ff", "#000000", "#aaaaaa" },  // 1 = selected
+	{ "#000000", "#000000", "#aaaaaa" },  // 1 = selected
 	{ "#0066ff", "#ff0000", "#000000" },  // 2 = urgent/warning
 	{ "#000000", "#000000", "#000000" },  // 3 = hidden
 	// add more here
@@ -34,6 +35,9 @@ static Rule rules[] = {
 	{ NULL,       NULL,       " (@D)",    (1<<8),       False },
 	{ NULL,       NULL,       " (@0)",    ~0,           False },
 	{ NULL,       NULL,       " (@F)",    0,            True },
+// Floating apps.
+	{ "feh",      NULL,       NULL,       0,            True },
+	{ NULL,       NULL,       "plugin-container", 0,    True },
 // Terminal apps.
 	{ "Rxvt",     NULL,       NULL,       0,            TERMINAL },
 	{ "terminal", NULL,       NULL,       0,            TERMINAL },
@@ -66,9 +70,12 @@ static Layout layouts[] = {
 
 /* commands */
 static const char *dmenucmd[] = { "dmenu_run", "-fn", font, "-nb", colors[0][ColBG], "-nf", colors[0][ColFG], "-sb", colors[1][ColBG], "-sf", colors[1][ColFG], NULL };
-static const char *termcmd[]  = { "xterm", NULL };
+static const char *termcmd[] = { "xterm", NULL };
 static const char *firefoxcmd[] = { "firefox", NULL };
 static const char *thunarcmd[] = { "thunar", NULL };
+static const char *volumeupcmd[] = { "volume", "up", NULL };
+static const char *volumedowncmd[] = { "volume", "down", NULL };
+static const char *volumemutecmd[] = { "volume", "toggle", NULL };
 
 static Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -110,6 +117,9 @@ static Key keys[] = {
 	TAGKEYS(                        XK_s,                      7)
 	TAGKEYS(                        XK_d,                      8)
 	{ MODKEY|ShiftMask,             XK_Escape, quit,           {0} },
+	{ 0,            XF86XK_AudioRaiseVolume,   spawn,          {.v = volumeupcmd } },
+	{ 0,            XF86XK_AudioLowerVolume,   spawn,          {.v = volumedowncmd } },
+	{ 0,            XF86XK_AudioMute,          spawn,          {.v = volumemutecmd } },
 };
 
 /* button definitions */
