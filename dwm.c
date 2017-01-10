@@ -605,7 +605,8 @@ drawbar(void) {
 	}
 
 	for(c = clients; c; c = c->next) {
-		occ |= c->tags;
+		if(c->tags != TAGMASK) // Special case since I hide unoccupied tags.
+			occ |= c->tags;
 		if(c->isurgent)
 			urg |= c->tags;
 	}
