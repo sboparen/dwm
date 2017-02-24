@@ -25,10 +25,7 @@ static Rule rules[] = {
 	{ "Gimp",     NULL,       NULL,       0,            True },
 	{ "Firefox",  NULL,       NULL,       1 << 8,       True },
 // Terminal apps.
-	{ "Rxvt",     NULL,       NULL,       0,            TERMINAL },
-	{ "terminal", NULL,       NULL,       0,            TERMINAL },
-	{ "Terminal", NULL,       NULL,       0,            TERMINAL },
-	{ "xterm",    NULL,       NULL,       0,            TERMINAL },
+	{ "st-256color", NULL,    NULL,       0,            TERMINAL },
 	{ "XTerm",    NULL,       NULL,       0,            TERMINAL },
 };
 

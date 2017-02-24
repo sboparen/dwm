@@ -35,14 +35,15 @@ static Rule rules[] = {
 	{ NULL,       NULL,       " (@D)",    (1<<8),       False },
 	{ NULL,       NULL,       " (@0)",    ~0,           False },
 	{ NULL,       NULL,       " (@F)",    0,            True },
+// Apps with specific tags.
+	{ "Steam",    NULL,       NULL,       (1<<4),       False },
 // Floating apps.
 	{ "feh",      NULL,       NULL,       0,            True },
+	{ "Gimp",     NULL,       NULL,       0,            True },
+	{ "StepMania",NULL,       NULL,       0,            True },
 	{ NULL,       NULL,       "plugin-container", 0,    True },
 // Terminal apps.
-	{ "Rxvt",     NULL,       NULL,       0,            TERMINAL },
-	{ "terminal", NULL,       NULL,       0,            TERMINAL },
-	{ "Terminal", NULL,       NULL,       0,            TERMINAL },
-	{ "xterm",    NULL,       NULL,       0,            TERMINAL },
+	{ "st-256color", NULL,    NULL,       0,            TERMINAL },
 	{ "XTerm",    NULL,       NULL,       0,            TERMINAL },
 };
 
@@ -84,7 +85,6 @@ static Key keys[] = {
 	{ MODKEY,                       XK_x,      spawn,          {.v = termcmd } },
 	{ MODKEY|ShiftMask,		XK_z,      spawn,          {.v = firefoxcmd } },
 	{ MODKEY,			XK_z,      spawn,          {.v = thunarcmd } },
-
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
