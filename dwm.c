@@ -140,6 +140,7 @@ static void arrange(void);
 static void attach(Client *c);
 static void attachstack(Client *c);
 static void buttonpress(XEvent *e);
+static void centerfloat(const Arg *arg);
 static void checkotherwm(void);
 static void cleanup(void);
 static void clearurgent(Client *c);
@@ -425,6 +426,17 @@ buttonpress(XEvent *e) {
 		if(click == buttons[i].click && buttons[i].func && buttons[i].button == ev->button
 		   && CLEANMASK(buttons[i].mask) == CLEANMASK(ev->state))
 			buttons[i].func(click == ClkTagBar && buttons[i].arg.i == 0 ? &arg : &buttons[i].arg);
+}
+
+void
+centerfloat(const Arg *arg) {
+	if(!sel)
+		return;
+	if(!sel->isfloating)
+		return;
+	sel->x = wx + (ww / 2 - sel->w / 2); /* center in x direction */
+	sel->y = wy + (wh / 2 - sel->h / 2); /* center in y direction */
+	arrange();
 }
 
 void
@@ -1887,3 +1899,5 @@ main(int argc, char *argv[]) {
 	XCloseDisplay(dpy);
 	return 0;
 }
+
+// vim:noexpandtab:shiftwidth=8:softtabstop=8
