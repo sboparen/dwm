@@ -71,7 +71,8 @@ static Layout layouts[] = {
 
 /* commands */
 static const char *dmenucmd[] = { "dmenu_run", "-fn", font, "-nb", colors[0][ColBG], "-nf", colors[0][ColFG], "-sb", colors[1][ColBG], "-sf", colors[1][ColFG], NULL };
-static const char *termcmd[] = { "xterm", NULL };
+static const char *termcmd[] = { "st", NULL };
+static const char *xtermcmd[] = { "xterm", NULL };
 static const char *firefoxcmd[] = { "firefox", NULL };
 static const char *thunarcmd[] = { "thunar", NULL };
 static const char *volumeupcmd[] = { "volume", "up", NULL };
@@ -80,7 +81,7 @@ static const char *volumemutecmd[] = { "volume", "toggle", NULL };
 
 static Key keys[] = {
 	/* modifier                     key        function        argument */
-	{ Mod1Mask|ShiftMask,           XK_Return, spawn,          {.v = termcmd } },
+	{ Mod1Mask|ShiftMask,           XK_Return, spawn,          {.v = xtermcmd } },
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
 	{ MODKEY,                       XK_x,      spawn,          {.v = termcmd } },
 	{ MODKEY|ShiftMask,		XK_z,      spawn,          {.v = firefoxcmd } },
