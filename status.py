@@ -98,11 +98,24 @@ def clock():
     xpropset('_STATUS_CLOCK', time.strftime(clock_format))
     time.sleep(0.5)
 
+# Disk space warning.
+def diskspace():
+    status = ''
+    for line in subprocess.check_output(['df']).rstrip('\n').split('\n')[1:]:
+        line = line.split()
+        path, used = line[5], int(line[4].rstrip('%'))
+        if used >= 95:
+            if used > 98:
+                status += '\x03'
+            status += '%s %d%%\x01, ' % (path, used)
+    xpropset('_STATUS_DISKSPACE', status.rstrip('\x01, '))
+    time.sleep(10)
+
 # Volume.
 volume = command('volume', interval=2)
 
 # Default list of entries to appear in the status bar.
-functions = [volume, clock]
+functions = [diskspace, volume, clock]
 
 def combine(entries):
     return '\x01 : '.join(entries)
