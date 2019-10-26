@@ -74,6 +74,7 @@ static const char *dmenucmd[] = { "dmenu_run", "-fn", font, "-nb", colors[0][Col
 static const char *termcmd[] = { "st", NULL };
 static const char *xtermcmd[] = { "xterm", NULL };
 static const char *firefoxcmd[] = { "firefox", NULL };
+static const char *screenshotcmd[] = { "screenshot", NULL };
 static const char *thunarcmd[] = { "thunar", NULL };
 static const char *volumeupcmd[] = { "volume", "up", NULL };
 static const char *volumedowncmd[] = { "volume", "down", NULL };
@@ -86,6 +87,7 @@ static Key keys[] = {
 	{ MODKEY,                       XK_x,      spawn,          {.v = termcmd } },
 	{ MODKEY|ShiftMask,		XK_z,      spawn,          {.v = firefoxcmd } },
 	{ MODKEY,			XK_z,      spawn,          {.v = thunarcmd } },
+	{ MODKEY,			XK_Print,  spawn,          {.v = screenshotcmd } },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
