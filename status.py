@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import atexit
 import os
 import signal
@@ -56,17 +56,20 @@ def fork(f):
             except KeyboardInterrupt:
                 pass
             except Exception as e:
-                print f
-                print e
+                print(f)
+                print(e)
                 time.sleep(5)
         exit(0)
     kids.append(pid)
+
+def check_output(*args):
+    return subprocess.check_output(args).decode('utf8').rstrip('\n')
 
 def command(cmd, interval):
     propname = '_STATUS_' + cmd.upper()
     xpropset(propname, '...')
     def func():
-        xpropset(propname, subprocess.check_output([cmd]).rstrip('\n'))
+        xpropset(propname, check_output(cmd))
         time.sleep(interval)
     func.__name__ = cmd
     return func
@@ -84,11 +87,12 @@ def main():
     try:
         while True:
             entries = [xpropget(name) for name in names]
-            entries = [value for value in entries if value != '']
+            entries = [value for value in entries if len(value) > 0]
+            entries = [entry.decode('utf8') for entry in entries]
             xpropset('WM_NAME', combine(entries))
             xpropwait(names)
     except KeyboardInterrupt:
-        print
+        pass
 
 ########################################################################
 
@@ -101,7 +105,7 @@ def clock():
 # Disk space warning.
 def diskspace():
     status = ''
-    for line in subprocess.check_output(['df']).rstrip('\n').split('\n')[1:]:
+    for line in check_output('df').split('\n')[1:]:
         line = line.split()
         path, used = line[5], int(line[4].rstrip('%'))
         if used >= 95:

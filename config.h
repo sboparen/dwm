@@ -85,6 +85,7 @@ static Key keys[] = {
 	{ Mod1Mask|ShiftMask,           XK_Return, spawn,          {.v = xtermcmd } },
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
 	{ MODKEY,                       XK_x,      spawn,          {.v = termcmd } },
+	{ MODKEY,                       XK_t,      spawn,          {.v = termcmd } },
 	{ MODKEY|ShiftMask,		XK_z,      spawn,          {.v = firefoxcmd } },
 	{ MODKEY,			XK_z,      spawn,          {.v = thunarcmd } },
 	{ MODKEY,			XK_Print,  spawn,          {.v = screenshotcmd } },
