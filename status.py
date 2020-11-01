@@ -96,6 +96,25 @@ def main():
 
 ########################################################################
 
+# Battery.
+def battery():
+    status = []
+    for x in check_output('acpi', '-b').split('\n'):
+        if x == '': continue
+        x = [x.lower().strip() for x in x[x.index(':')+1:].split(',')]
+        out = x[1]
+        if int(x[1][:-1]) < 20: out = "\x03" + out
+        if x[0] == 'charging' or x[0] == 'charged': out += '+'
+        if x[0] == 'discharging': out += '-'
+        if x[0].find('zero') >= 0 or x[0].find('never') >= 0: out += '!?'
+        if 2 < len(x) and ':' in x[2]:
+            h, m, s = [int(z) for z in x[2].split()[0].split(':')]
+            out += ' %dh' % h if h > 0 else ' %dm' % m
+        if out == '100%': out = '99%'
+        status.append(out)
+    xpropset('_STATUS_BATTERY', '\x01, '.join(status))
+    time.sleep(2)
+
 # Clock.
 clock_format = '%a %Y %b %d %I:%M:%S %p %Z'
 def clock():
@@ -104,22 +123,22 @@ def clock():
 
 # Disk space warning.
 def diskspace():
-    status = ''
+    status = []
     for line in check_output('df').split('\n')[1:]:
         line = line.split()
         path, used = line[5], int(line[4].rstrip('%'))
         if used >= 95:
             if used > 98:
                 status += '\x03'
-            status += '%s %d%%\x01, ' % (path, used)
-    xpropset('_STATUS_DISKSPACE', status.rstrip('\x01, '))
+            status.append('%s %d%%' % (path, used))
+    xpropset('_STATUS_DISKSPACE', '\x01, '.join(status))
     time.sleep(10)
 
 # Volume.
 volume = command('volume', interval=2)
 
 # Default list of entries to appear in the status bar.
-functions = [diskspace, volume, clock]
+functions = [diskspace, volume, battery, clock]
 
 def combine(entries):
     return '\x01 : '.join(entries)
