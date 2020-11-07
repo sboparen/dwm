@@ -19,11 +19,16 @@ static Bool topbar                  = True;     /* False means bottom bar */
 
 /* tagging */
 static const char tags[][MAXTAGLEN] =
+#ifndef MORE_TAGS
 	{ "1", "2", "3", "Q", "W", "E", "A", "S", "D" };
+#else
+	{ "1", "2", "3", "4", "Q", "W", "E", "R", "A", "S", "D", "F" };
+#endif
 static unsigned int tagset[] = {1, 1}; /* after start, first tag is selected */
 
 static Rule rules[] = {
 	/* class      instance    title       tags mask     isfloating */
+#ifndef MORE_TAGS
 	{ NULL,       NULL,       " (@1)",    (1<<0),       False },
 	{ NULL,       NULL,       " (@2)",    (1<<1),       False },
 	{ NULL,       NULL,       " (@3)",    (1<<2),       False },
@@ -33,6 +38,19 @@ static Rule rules[] = {
 	{ NULL,       NULL,       " (@A)",    (1<<6),       False },
 	{ NULL,       NULL,       " (@S)",    (1<<7),       False },
 	{ NULL,       NULL,       " (@D)",    (1<<8),       False },
+#else
+	{ NULL,       NULL,       " (@1)",    (1<<0),       False },
+	{ NULL,       NULL,       " (@2)",    (1<<1),       False },
+	{ NULL,       NULL,       " (@3)",    (1<<2),       False },
+	{ NULL,       NULL,       " (@4)",    (1<<3),       False },
+	{ NULL,       NULL,       " (@Q)",    (1<<4),       False },
+	{ NULL,       NULL,       " (@W)",    (1<<5),       False },
+	{ NULL,       NULL,       " (@E)",    (1<<6),       False },
+	{ NULL,       NULL,       " (@R)",    (1<<7),       False },
+	{ NULL,       NULL,       " (@A)",    (1<<8),       False },
+	{ NULL,       NULL,       " (@S)",    (1<<9),       False },
+	{ NULL,       NULL,       " (@D)",    (1<<10),      False },
+#endif
 	{ NULL,       NULL,       " (@0)",    ~0,           False },
 	{ NULL,       NULL,       " (@F)",    0,            True },
 // Apps with specific tags.
@@ -95,7 +113,7 @@ static Key keys[] = {
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
 	{ MODKEY,                       XK_m,      setmfact,       {.f = 1+0.50} },
-	{ MODKEY,                       XK_f,      centerfloat,    {0} },
+	{ MODKEY,                       XK_g,      centerfloat,    {0} },
 	{ MODKEY,                       XK_Return, zoom,           {0} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
 	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
@@ -115,12 +133,23 @@ static Key keys[] = {
 	TAGKEYS(                        XK_7,                      6)
 	TAGKEYS(                        XK_8,                      7)
 	TAGKEYS(                        XK_9,                      8)
+#ifndef MORE_TAGS
 	TAGKEYS(                        XK_q,                      3)
 	TAGKEYS(                        XK_w,                      4)
 	TAGKEYS(                        XK_e,                      5)
 	TAGKEYS(                        XK_a,                      6)
 	TAGKEYS(                        XK_s,                      7)
 	TAGKEYS(                        XK_d,                      8)
+#else
+	TAGKEYS(                        XK_q,                      4)
+	TAGKEYS(                        XK_w,                      5)
+	TAGKEYS(                        XK_e,                      6)
+	TAGKEYS(                        XK_r,                      7)
+	TAGKEYS(                        XK_a,                      8)
+	TAGKEYS(                        XK_s,                      9)
+	TAGKEYS(                        XK_d,                      10)
+	TAGKEYS(                        XK_f,                      11)
+#endif
 	{ MODKEY|ShiftMask,             XK_Escape, quit,           {0} },
 	{ 0,            XF86XK_AudioRaiseVolume,   spawn,          {.v = volumeupcmd } },
 	{ 0,            XF86XK_AudioLowerVolume,   spawn,          {.v = volumedowncmd } },

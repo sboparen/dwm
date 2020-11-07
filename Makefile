@@ -8,6 +8,9 @@ OBJ = ${SRC:.c=.o}
 
 DWM_TERMINAL_WIDTH ?= 80
 DEFINES = -DTERMINAL_WIDTH=${DWM_TERMINAL_WIDTH}
+ifdef DWM_MORE_TAGS
+DEFINES += -DMORE_TAGS
+endif
 
 all: options dwm
 
