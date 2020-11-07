@@ -6,6 +6,9 @@ include config.mk
 SRC = dwm.c
 OBJ = ${SRC:.c=.o}
 
+DWM_TERMINAL_WIDTH ?= 80
+DEFINES = -DTERMINAL_WIDTH=${DWM_TERMINAL_WIDTH}
+
 all: options dwm
 
 options:
@@ -13,10 +16,11 @@ options:
 	@echo "CFLAGS   = ${CFLAGS}"
 	@echo "LDFLAGS  = ${LDFLAGS}"
 	@echo "CC       = ${CC}"
+	@echo "DEFINES  = ${DEFINES}"
 
 .c.o:
 	@echo CC $<
-	@${CC} -c ${CFLAGS} $<
+	@${CC} -c ${CFLAGS} ${DEFINES} $<
 
 ${OBJ}: config.h config.mk
 
