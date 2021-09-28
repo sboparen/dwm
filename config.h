@@ -151,9 +151,12 @@ static Key keys[] = {
 	TAGKEYS(                        XK_f,                      11)
 #endif
 	{ MODKEY|ShiftMask,             XK_Escape, quit,           {0} },
-	{ 0,            XF86XK_AudioRaiseVolume,   spawn,          {.v = volumeupcmd } },
-	{ 0,            XF86XK_AudioLowerVolume,   spawn,          {.v = volumedowncmd } },
-	{ 0,            XF86XK_AudioMute,          spawn,          {.v = volumemutecmd } },
+
+	{ 0,       XF86XK_AudioRaiseVolume,   spawn,  {.v = volumeupcmd } },
+	{ 0,       XF86XK_AudioLowerVolume,   spawn,  {.v = volumedowncmd } },
+	{ 0,       XF86XK_AudioMute,          spawn,  {.v = volumemutecmd } },
+	{ MODKEY,  XK_Up,                     spawn,  {.v = volumeupcmd } },
+	{ MODKEY,  XK_Down,                   spawn,  {.v = volumedowncmd } },
 };
 
 /* button definitions */
