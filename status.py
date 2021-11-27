@@ -66,12 +66,14 @@ def check_output(*args):
     return subprocess.check_output(args).decode('utf8').rstrip('\n')
 
 def command(cmd, interval):
-    propname = '_STATUS_' + cmd.upper()
+    if isinstance(cmd, str):
+        cmd = [cmd]
+    propname = '_STATUS_' + cmd[0].upper()
     xpropset(propname, '...')
     def func():
-        xpropset(propname, check_output(cmd))
+        xpropset(propname, check_output(*cmd))
         time.sleep(interval)
-    func.__name__ = cmd
+    func.__name__ = cmd[0]
     return func
 
 def main():
