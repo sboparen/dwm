@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import atexit
 import os
+import re
 import signal
 import subprocess
 import time
@@ -136,11 +137,14 @@ def diskspace():
     xpropset('_STATUS_DISKSPACE', '\x01, '.join(status))
     time.sleep(10)
 
+# Thermals.
+thermals = command('thermals', interval=2)
+
 # Volume.
 volume = command('volume', interval=2)
 
 # Default list of entries to appear in the status bar.
-functions = [diskspace, volume, battery, clock]
+functions = [diskspace, thermals, volume, battery, clock]
 
 def combine(entries):
     return '\x01 : '.join(entries)
